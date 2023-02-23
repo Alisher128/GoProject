@@ -15,7 +15,7 @@ type Game struct {
 	CreatedAt   time.Time `json:"-"`
 	Title       string    `json:"name"`
 	Year        int32     `json:"year,omitempty"`
-	Runtime     Runtime   `json:"runtime,omitempty"`
+	Runtime     Runtime   `json:"dateOfcreate,omitempty"`
 	Genres      []string  `json:"genres,omitempty"`
 	Description []string  `json:"description"`
 	Size        float64   `json:"size"`
@@ -43,7 +43,7 @@ func ValidateGame(v *validator.Validator, game *Game) {
 
 func (m GameModel) Insert(game *Game) error {
 	query := `
-INSERT INTO game (title, year, runtime, genres)
+INSERT INTO game (title, year, runtime, genres,)
 VALUES ($1, $2, $3, $4)
 RETURNING id, created_at, version`
 	args := []any{game.Title, game.Year, game.Runtime, pq.Array(game.Genres)}
@@ -60,7 +60,7 @@ func (m GameModel) Get(id int64) (*Game, error) {
 	}
 	// Remove the pg_sleep(10) clause.
 	query := `
-SELECT id, created_at, title, year, runtime, genres, version
+SELECT id, runtime, title, description, genres, year, version, size, price,CreatedAt
 FROM games
 WHERE id = $1`
 	var game Game
@@ -75,6 +75,9 @@ WHERE id = $1`
 		&game.Runtime,
 		pq.Array(&game.Genres),
 		&game.Version,
+		&game.Price,
+		&game.Size,
+		&game.Description,
 	)
 	if err != nil {
 		switch {
