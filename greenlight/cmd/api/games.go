@@ -11,10 +11,13 @@ import (
 
 func (app *application) createGameHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title   string       `json:"title"`
-		Year    int32        `json:"year"`
-		Runtime data.Runtime `json:"runtime"`
-		Genres  []string     `json:"genres"`
+		Title       string       `json:"name"`
+		Year        int32        `json:"year"`
+		Runtime     data.Runtime `json:"runtime"`
+		Genres      []string     `json:"genres"`
+		Size        float64      `json:"size"`
+		Price       float64      `json:"price"`
+		Description []string     `json:"description"`
 	}
 	err := app.readJSON(w, r, &input)
 	if err != nil {
@@ -23,10 +26,13 @@ func (app *application) createGameHandler(w http.ResponseWriter, r *http.Request
 	}
 	// Note that the game variable contains a *pointer* to a Game struct.
 	game := &data.Game{
-		Title:   input.Title,
-		Year:    input.Year,
-		Runtime: input.Runtime,
-		Genres:  input.Genres,
+		Title:       input.Title,
+		Year:        input.Year,
+		Runtime:     input.Runtime,
+		Genres:      input.Genres,
+		Size:        input.Size,
+		Price:       input.Price,
+		Description: input.Description,
 	}
 	v := validator.New()
 	if data.ValidateGame(v, game); !v.Valid() {

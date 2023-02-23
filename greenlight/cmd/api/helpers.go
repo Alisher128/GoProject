@@ -82,7 +82,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 			return fmt.Errorf("body contains unknown key %s", fieldName)
 			// Use the errors.As() function to check whether the error has the type
 			// *http.MaxBytesError. If it does, then it means the request body exceeded our
-			// size limit of 1MB and we return a clear error message.
+			// size limit of 1MB, and we return a clear error message.
 		case errors.As(err, &maxBytesError):
 			return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
 		case errors.As(err, &invalidUnmarshalError):
@@ -94,7 +94,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	// Call Decode() again, using a pointer to an empty anonymous struct as the
 	// destination. If the request body only contained a single JSON value this will
 	// return an io.EOF error. So if we get anything else, we know that there is
-	// additional data in the request body and we return our own custom error message.
+	// additional data in the request body, and we return our own custom error message.
 	err = dec.Decode(&struct{}{})
 	if err != io.EOF {
 		return errors.New("body must only contain a single JSON value")
