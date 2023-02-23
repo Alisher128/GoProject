@@ -10,68 +10,71 @@ import (
 	"time"
 )
 
-type Movie struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"-"`
-	Title     string    `json:"title"`
-	Year      int32     `json:"year,omitempty"`
-	Runtime   Runtime   `json:"runtime,omitempty"`
-	Genres    []string  `json:"genres,omitempty"`
-	Version   int32     `json:"version"`
+type Game struct {
+	ID          int64     `json:"id"`
+	CreatedAt   time.Time `json:"-"`
+	Title       string    `json:"name"`
+	Year        int32     `json:"year,omitempty"`
+	Runtime     Runtime   `json:"runtime,omitempty"`
+	Genres      []string  `json:"genres,omitempty"`
+	Description []string  `json:"description"`
+	Size        float64   `json:"size"`
+	Price       float64   `json:"price"`
+	Version     int32     `json:"version"`
 }
 
-type MovieModel struct {
+type GameModel struct {
 	DB *sql.DB
 }
 
-func ValidateMovie(v *validator.Validator, movie *Movie) {
-	v.Check(movie.Title != "", "title", "must be provided")
-	v.Check(len(movie.Title) <= 500, "title", "must not be more than 500 bytes long")
-	v.Check(movie.Year != 0, "year", "must be provided")
-	v.Check(movie.Year >= 1888, "year", "must be greater than 1888")
-	v.Check(movie.Year <= int32(time.Now().Year()), "year", "must not be in the future")
-	v.Check(movie.Runtime != 0, "runtime", "must be provided")
-	v.Check(movie.Runtime > 0, "runtime", "must be a positive integer")
-	v.Check(movie.Genres != nil, "genres", "must be provided")
-	v.Check(len(movie.Genres) >= 1, "genres", "must contain at least 1 genre")
-	v.Check(len(movie.Genres) <= 5, "genres", "must not contain more than 5 genres")
-	v.Check(validator.Unique(movie.Genres), "genres", "must not contain duplicate values")
+func ValidateGame(v *validator.Validator, game *Game) {
+	v.Check(game.Title != "", "title", "must be provided")
+	v.Check(len(game.Title) <= 500, "title", "must not be more than 500 bytes long")
+	v.Check(game.Year != 0, "year", "must be provided")
+	v.Check(game.Year >= 1888, "year", "must be greater than 1888")
+	v.Check(game.Year <= int32(time.Now().Year()), "year", "must not be in the future")
+	v.Check(game.Runtime != 0, "runtime", "must be provided")
+	v.Check(game.Runtime > 0, "runtime", "must be a positive integer")
+	v.Check(game.Genres != nil, "genres", "must be provided")
+	v.Check(len(game.Genres) >= 1, "genres", "must contain at least 1 genre")
+	v.Check(len(game.Genres) <= 5, "genres", "must not contain more than 5 genres")
+	v.Check(validator.Unique(game.Genres), "genres", "must not contain duplicate values")
 }
 
-func (m MovieModel) Insert(movie *Movie) error {
+func (m GameModel) Insert(game *Game) error {
 	query := `
-INSERT INTO movies (title, year, runtime, genres)
+INSERT INTO game (title, year, runtime, genres)
 VALUES ($1, $2, $3, $4)
 RETURNING id, created_at, version`
-	args := []any{movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)}
+	args := []any{game.Title, game.Year, game.Runtime, pq.Array(game.Genres)}
 	// Create a context with a 3-second timeout.
 	// Create a context with a 3-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	// Use QueryRowContext() and pass the context as the first argument.
-	return m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&game.ID, &game.CreatedAt, &game.Version)
 }
-func (m MovieModel) Get(id int64) (*Movie, error) {
+func (m GameModel) Get(id int64) (*Game, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
 	// Remove the pg_sleep(10) clause.
 	query := `
 SELECT id, created_at, title, year, runtime, genres, version
-FROM movies
+FROM games
 WHERE id = $1`
-	var movie Movie
+	var game Game
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	// Remove &[]byte{} from the first Scan() destination.
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
-		&movie.ID,
-		&movie.CreatedAt,
-		&movie.Title,
-		&movie.Year,
-		&movie.Runtime,
-		pq.Array(&movie.Genres),
-		&movie.Version,
+		&game.ID,
+		&game.CreatedAt,
+		&game.Title,
+		&game.Year,
+		&game.Runtime,
+		pq.Array(&game.Genres),
+		&game.Version,
 	)
 	if err != nil {
 		switch {
@@ -81,28 +84,28 @@ WHERE id = $1`
 			return nil, err
 		}
 	}
-	return &movie, nil
+	return &game, nil
 }
-func (m MovieModel) Update(movie *Movie) error {
+func (m GameModel) Update(game *Game) error {
 	query := `
-UPDATE movies
+UPDATE games
 SET title = $1, year = $2, runtime = $3, genres = $4, version = version + 1
 WHERE id = $5 AND version = $6
 RETURNING version`
 	args := []any{
-		movie.Title,
-		movie.Year,
-		movie.Runtime,
-		pq.Array(movie.Genres),
-		movie.ID,
-		movie.Version,
+		game.Title,
+		game.Year,
+		game.Runtime,
+		pq.Array(game.Genres),
+		game.ID,
+		game.Version,
 	}
 	// Create a context with a 3-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	// Use QueryRowContext() and pass the context as the first argument.
 	// Use QueryRowContext() and pass the context as the first argument.
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.Version)
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&game.Version)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -113,12 +116,12 @@ RETURNING version`
 	}
 	return nil
 }
-func (m MovieModel) Delete(id int64) error {
+func (m GameModel) Delete(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
 	}
 	query := `
-DELETE FROM movies
+DELETE FROM games
 WHERE id = $1`
 	// Create a context with a 3-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -138,15 +141,15 @@ WHERE id = $1`
 	return nil
 }
 
-// Create a new GetAll() method which returns a slice of movies. Although we're not
+// Create a new GetAll() method which returns a slice of games. Although we're not
 // using them right now, we've set this up to accept the various filter parameters as
 // arguments.
-func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, Metadata, error) {
+func (m GameModel) GetAll(title string, genres []string, filters Filters) ([]*Game, Metadata, error) {
 	// Update the SQL query to include the window function which counts the total
 	// (filtered) records.
 	query := fmt.Sprintf(`
 SELECT count(*) OVER(), id, created_at, title, year, runtime, genres, version
-FROM movies
+FROM games
 WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 AND (genres @> $2 OR $2 = '{}')
 ORDER BY %s %s, id ASC
@@ -161,23 +164,23 @@ LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 	defer rows.Close()
 	// Declare a totalRecords variable.
 	totalRecords := 0
-	movies := []*Movie{}
+	games := []*Game{}
 	for rows.Next() {
-		var movie Movie
+		var game Game
 		err := rows.Scan(
 			&totalRecords, // Scan the count from the window function into totalRecords.
-			&movie.ID,
-			&movie.CreatedAt,
-			&movie.Title,
-			&movie.Year,
-			&movie.Runtime,
-			pq.Array(&movie.Genres),
-			&movie.Version,
+			&game.ID,
+			&game.CreatedAt,
+			&game.Title,
+			&game.Year,
+			&game.Runtime,
+			pq.Array(&game.Genres),
+			&game.Version,
 		)
 		if err != nil {
 			return nil, Metadata{}, err // Update this to return an empty Metadata struct.
 		}
-		movies = append(movies, &movie)
+		games = append(games, &game)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, Metadata{}, err // Update this to return an empty Metadata struct.
@@ -186,5 +189,5 @@ LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 	// parameters from the client.
 	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
 	// Include the metadata struct when returning.
-	return movies, metadata, nil
+	return games, metadata, nil
 }

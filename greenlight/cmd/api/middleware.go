@@ -204,7 +204,7 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 			app.notPermittedResponse(w, r)
 			return
 		}
-		// Otherwise they have the required permission so we call the next handler in
+		// Otherwise they have the required permission, so we call the next handler in
 		// the chain.
 		next.ServeHTTP(w, r)
 	}

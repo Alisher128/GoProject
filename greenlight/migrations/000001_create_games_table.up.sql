@@ -1,13 +1,14 @@
 CREATE TABLE IF NOT EXISTS games (
                        id INT PRIMARY KEY,
-                       `name` VARCHAR,
+                       name VARCHAR,
                        description TEXT,
-                       genre varchar,
+                       genres varchar,
+                       year timestamp,
                        dateOfCreate timestamp,
                        dateOfUpdate timestamp,
                        dateOfDelete timestamp,
-                       `version` float,
+                       version float,
                        episode INT,
-                       `size` float,
+                       size float,
                        price float
 );
